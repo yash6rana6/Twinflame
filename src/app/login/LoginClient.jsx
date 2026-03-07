@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { motion } from "framer-motion";
 import Link from "next/link";
 import { signIn } from "next-auth/react";
 import { useAuth } from "@/context/AuthContext";
@@ -17,6 +16,7 @@ export default function LoginClient() {
     email: "",
     password: "",
   });
+
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -50,7 +50,7 @@ export default function LoginClient() {
         router.refresh();
       }
     } catch (err) {
-      setError("Something went wrong.");
+      setError("Something went wrong");
     } finally {
       setLoading(false);
     }
@@ -66,16 +66,17 @@ export default function LoginClient() {
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-pink-50">
-      <div className="w-full max-w-md bg-white rounded-xl shadow p-8">
-        <h1 className="text-3xl font-bold mb-6 text-center">Login ❤️</h1>
+      <div className="w-full max-w-md bg-white shadow-lg rounded-xl p-8">
+        <h1 className="text-3xl font-bold text-center mb-6">Login ❤️</h1>
 
         {error && (
-          <div className="mb-4 p-2 bg-red-100 text-red-600 rounded text-sm text-center">
+          <div className="mb-4 text-red-600 text-sm text-center">
             {error}
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
+
           <input
             type="email"
             name="email"
@@ -97,12 +98,12 @@ export default function LoginClient() {
           />
 
           <button
-            type="submit"
             disabled={loading}
             className="w-full bg-pink-600 text-white py-2 rounded"
           >
             {loading ? "Logging in..." : "Login"}
           </button>
+
         </form>
 
         <p className="text-center mt-4 text-sm">
@@ -111,6 +112,7 @@ export default function LoginClient() {
             Register
           </Link>
         </p>
+
       </div>
     </main>
   );
