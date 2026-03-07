@@ -1,36 +1,78 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
-
-## Getting Started
-
-First, run the development server:
-
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+love-timeline-app/
+│
+├── app/
+│   ├── layout.js                 # Root layout (common header/footer)
+│   ├── page.js                   # Homepage (landing page)
+│   │
+│   ├── quiz/
+│   │   ├── page.js               # Quiz landing
+│   │   ├── play/page.js          # Quiz questions page
+│   │   └── result/[id]/page.js   # Quiz result page
+│   │
+│   ├── timeline/
+│   │   ├── page.js               # Timeline landing
+│   │   ├── create/page.js        # Create timeline form
+│   │   ├── preview/[id]/page.js  # Preview before payment
+│   │   └── view/[id]/page.js     # Final timeline (shareable link)
+│   │
+│   ├── whatsapp-bot/
+│   │   ├── page.js               # Bot landing
+│   │   ├── setup/page.js         # Setup messages
+│   │   └── success/page.js       # Payment success
+│   │
+│   ├── pricing/
+│   │   └── page.js               # Pricing page (all products)
+│   │
+│   ├── payment/
+│   │   ├── checkout/page.js      # Payment gateway
+│   │   └── success/page.js       # Payment success (all products)
+│   │
+│   └── api/
+│       ├── quiz/
+│       │   ├── submit/route.js   # Submit quiz answers
+│       │   └── result/route.js   # Get quiz result
+│       │
+│       ├── timeline/
+│       │   ├── create/route.js   # Create timeline
+│       │   ├── extend/route.js   # Extend validity
+│       │   └── get/route.js      # Fetch timeline data
+│       │
+│       ├── whatsapp/
+│       │   ├── schedule/route.js # Schedule messages
+│       │   └── send/route.js     # Send message (cron job)
+│       │
+│       └── payment/
+│           ├── create-order/route.js  # Razorpay order
+│           └── verify/route.js        # Verify payment
+│
+├── components/
+│   ├── Navbar.js
+│   ├── Footer.js
+│   ├── QuizCard.js
+│   ├── TimelineBuilder.js
+│   ├── PricingCard.js
+│   └── PaymentModal.js
+│
+├── lib/
+│   ├── db.js                     # MongoDB connection
+│   ├── razorpay.js               # Razorpay config
+│   └── whatsapp.js               # WhatsApp API (Twilio/WATI)
+│
+├── models/
+│   ├── User.js
+│   ├── Quiz.js
+│   ├── Timeline.js
+│   └── WhatsAppBot.js
+│
+├── utils/
+│   ├── generateLink.js           # Unique link generator
+│   ├── checkExpiry.js            # Check timeline expiry
+│   └── emailSender.js            # Send emails
+│
+├── public/
+│   ├── images/
+│   └── icons/
+│
+├── .env.local                    # Environment variables
+├── package.json
+└── next.config.js
