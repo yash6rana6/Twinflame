@@ -335,7 +335,7 @@ export default function WatchRoom() {
     if (!roomId || !role) return;
     let ws = null;
     const timer = setTimeout(() => {
-      const wsUrl = `ws://twinflame.vercel.app//party/room/${roomId}?role=${role}`;
+      const wsUrl = `wss://twinflame.vercel.app//party/room/${roomId}?role=${role}`;
       ws = new WebSocket(wsUrl);
       socketRef.current = ws;
 
