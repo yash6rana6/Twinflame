@@ -1,3 +1,4 @@
 {
+  "name": "twinflame",
   "main": "src/app/party/room.js"
 }
