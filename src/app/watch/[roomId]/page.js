@@ -331,60 +331,106 @@ export default function WatchRoom() {
   useEffect(() => { injectStyles(); }, []);
 
   // WebSocket
-  useEffect(() => {
-    if (!roomId || !role) return;
-    let ws = null;
-    const timer = setTimeout(() => {
-      const wsUrl = `wss://twinflame.yash6rana6.partykit.dev//party/room/${roomId}?role=${role}`;
-      ws = new WebSocket(wsUrl);
-      socketRef.current = ws;
+ useEffect(() => {
+  if (!roomId || !role) return;
 
-      ws.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          if (data.type === "state-update") {
-            const newState = data.state || {};
-            setState(newState);
-            if (newState?.videoUrl) {
-              const detected = detectSource(newState.videoUrl);
-              if (detected.type !== "unknown") {
-                setPlayerType(detected.type);
-                setVideoSrc(detected.type === "youtube" ? detected.id : detected.url);
-              } else { setPlayerType(null); setVideoSrc(null); }
-            } else { setPlayerType(null); setVideoSrc(null); }
+  let ws = null;
+  let reconnectTimer = null;
 
-            if (playerRef.current && newState?.videoUrl) {
-              const p = playerRef.current;
-              const detected = detectSource(newState.videoUrl);
-              if (detected.type === "youtube" && typeof p.getCurrentTime === "function") {
-                if (Math.abs(p.getCurrentTime() - (newState.currentTime || 0)) > 1.5)
-                  p.seekTo(newState.currentTime || 0, true);
-                const ps = p.getPlayerState();
-                if (newState.isPlaying && ps !== 1) p.playVideo();
-                else if (!newState.isPlaying && ps === 1) p.pauseVideo();
+  const connect = () => {
+    const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+
+    const wsUrl = `${protocol}://twinflame.yash6rana6.partykit.dev/party/${roomId}?role=${role}`;
+
+    ws = new WebSocket(wsUrl);
+    socketRef.current = ws;
+
+    ws.onopen = () => {
+      console.log("✅ WS connected");
+    };
+
+    ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+
+        if (data.type === "state-update") {
+          const newState = data.state || {};
+          setState(newState);
+
+          if (newState?.videoUrl) {
+            const detected = detectSource(newState.videoUrl);
+
+            if (detected.type !== "unknown") {
+              setPlayerType(detected.type);
+              setVideoSrc(
+                detected.type === "youtube" ? detected.id : detected.url
+              );
+            } else {
+              setPlayerType(null);
+              setVideoSrc(null);
+            }
+          } else {
+            setPlayerType(null);
+            setVideoSrc(null);
+          }
+
+          if (playerRef.current && newState?.videoUrl) {
+            const p = playerRef.current;
+            const detected = detectSource(newState.videoUrl);
+
+            if (
+              detected.type === "youtube" &&
+              typeof p.getCurrentTime === "function"
+            ) {
+              if (
+                Math.abs(p.getCurrentTime() - (newState.currentTime || 0)) > 1.5
+              ) {
+                p.seekTo(newState.currentTime || 0, true);
               }
-              if (detected.type === "video" && p.currentTime !== undefined) {
-                if (Math.abs(p.currentTime - (newState.currentTime || 0)) > 1.5)
-                  p.currentTime = newState.currentTime || 0;
-                if (newState.isPlaying && p.paused) p.play().catch(() => {});
-                else if (!newState.isPlaying && !p.paused) p.pause();
+
+              const ps = p.getPlayerState();
+
+              if (newState.isPlaying && ps !== 1) p.playVideo();
+              else if (!newState.isPlaying && ps === 1) p.pauseVideo();
+            }
+
+            if (detected.type === "video" && p.currentTime !== undefined) {
+              if (
+                Math.abs(p.currentTime - (newState.currentTime || 0)) > 1.5
+              ) {
+                p.currentTime = newState.currentTime || 0;
               }
+
+              if (newState.isPlaying && p.paused)
+                p.play().catch(() => {});
+              else if (!newState.isPlaying && !p.paused) p.pause();
             }
           }
-        } catch (err) { console.error("WS parse error:", err); }
-      };
-
-      ws.onerror = (e) => console.error("WS error:", e);
-      ws.onclose = () => { socketRef.current = null; };
-    }, 300);
-
-    return () => {
-      clearTimeout(timer);
-      ws?.close(1000, "Component unmounting");
-      socketRef.current?.close(1000, "Cleanup");
-      socketRef.current = null;
+        }
+      } catch (err) {
+        console.error("WS parse error:", err);
+      }
     };
-  }, [roomId, role]);
+
+    ws.onerror = (e) => {
+      console.error("❌ WS error:", e);
+    };
+
+    ws.onclose = () => {
+      console.log("⚠️ WS disconnected — reconnecting...");
+      reconnectTimer = setTimeout(connect, 2000);
+    };
+  };
+
+  connect();
+
+  return () => {
+    if (reconnectTimer) clearTimeout(reconnectTimer);
+    if (ws) ws.close();
+    socketRef.current = null;
+  };
+}, [roomId, role]);
+
 
   const sendYouTubeState = () => {
     if (!isHost || !playerRef.current || !socketRef.current) return;
