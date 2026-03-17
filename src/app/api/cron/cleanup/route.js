@@ -1,8 +1,10 @@
 import { cleanupExpiredVideos } from "@/controllers/expiringVideo.controller";
-import { connectDb } from "@/lib/db";
 
-export async function GET() {
-  await connectDb();
+export async function GET(req) {
+
+  if (req.headers.get("x-cron-secret") !== process.env.CRON_SECRET) {
+    return Response.json({ error: "unauthorized" }, { status: 401 });
+  }
 
   await cleanupExpiredVideos();
 
