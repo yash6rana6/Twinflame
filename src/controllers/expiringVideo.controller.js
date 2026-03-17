@@ -11,8 +11,7 @@ export async function createExpiringVideo({
   plan = "free",
   uploadedBy,
 }) {
-  // Because we have unique index on roomId,
-  // this will replace existing doc if any
+
   const doc = await ExpiringVideo.findOneAndUpdate(
     { roomId },
     {

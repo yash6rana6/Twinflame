@@ -19,6 +19,11 @@ const configs = [
     api_key: process.env.CLOUD3_KEY,
     api_secret: process.env.CLOUD3_SECRET,
   },
+   {
+    cloud_name: process.env.CLOUD4_NAME,
+    api_key: process.env.CLOUD4_KEY,
+    api_secret: process.env.CLOUD4_SECRET,
+  },
 ].filter(
   (c) => c.cloud_name && c.api_key && c.api_secret
 );
@@ -78,7 +83,7 @@ export async function deleteFromCloud(cloudIndex, publicId) {
 
   await cloudinary.uploader.destroy(publicId, {
     resource_type: "video",
-    invalidate: true, // CDN cache clear
+    invalidate: true, 
   });
 }
 

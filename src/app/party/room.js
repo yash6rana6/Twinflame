@@ -1,6 +1,9 @@
+import { timeStamp } from "console";
+
 export default {
   async onStart(room) {
     const stored = await room.storage.get("appState");
+    const chatHistory = await room.storage.get("chatHistory");
     if (stored) {
       room.state = stored;
       console.log(
@@ -20,6 +23,7 @@ export default {
       console.log("[onStart] Fresh state created");
       await room.storage.put("appState", room.state);
     }
+    room.chatHistory = chatHistory || [];
   },
 
   async onConnect(conn, room) {
@@ -27,7 +31,6 @@ export default {
       await this.onStart(room);
     }
 
-    // ✅ FIXED: conn.request undefined hota hai local dev mein
     let role = "guest";
     try {
       if (conn.request?.url) {
@@ -67,11 +70,20 @@ export default {
     }
 
     // 🔥 New client ko current state bhejo
+    // 🔥 New client ko current state bhejo
     conn.send(
       JSON.stringify({
         type: "state-update",
         state: room.state,
         yourRole: conn.id === room.state.hostId ? "host" : "viewer",
+      }),
+    );
+
+    // 💬 Send chat history
+    conn.send(
+      JSON.stringify({
+        type: "chat-history",
+        messages: room.chatHistory || [],
       }),
     );
 
@@ -152,12 +164,25 @@ export default {
       stateChanged = true;
     }
 
+    if (data.type == "chat") {
+      if (!data.text?.trim()) return;
+
+      const chatMessage = {
+        type: "chat",
+        text: data.text.trim(),
+        senderId: sender.id || "unknown",
+        timestamp: Date.now(),
+        username: data.username || "Anon",
+      };
+
+      room.broadcast(JSON.stringify(chatMessage));
+      room.chatHistory = [...(room.chatHistory || []), chatMessage].slice(-50);
+      await room.storage.put("chatHistory", room.chatHistory);
+      return;
+    }
+
     // 📢 Broadcast to everyone
     if (stateChanged) {
-      console.log(
-        "📢 Broadcasting state:",
-        room.state.videoUrl || "(no video)",
-      );
       room.broadcast(
         JSON.stringify({
           type: "state-update",

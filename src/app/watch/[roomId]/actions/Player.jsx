@@ -34,8 +34,15 @@ export default function Player({
             },
           }}
           onReady={(e) => (playerRef.current = e.target)}
-          onStateChange={() => {
-            if (isHost) onYouTubeState();
+          onStateChange={(e) => {
+            if (!isHost) return;
+
+            const state = e.data;
+
+            // play / pause / seek events
+            if (state === 1 || state === 2 || state === 3) {
+              onYouTubeState();
+            }
           }}
         />
       </div>
