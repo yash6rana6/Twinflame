@@ -10,7 +10,10 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+
+
 export const metadata = {
+  viewport: 'width=device-width, initial-scale=1, viewport-fit=cover',
   metadataBase: new URL("https://yourdomain.com"),
 
   title: {
