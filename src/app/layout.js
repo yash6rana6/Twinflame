@@ -13,7 +13,6 @@ const geistMono = Geist_Mono({
 
 
 export const metadata = {
-  viewport: 'width=device-width, initial-scale=1, viewport-fit=cover',
   metadataBase: new URL("https://yourdomain.com"),
 
   title: {
@@ -36,7 +35,7 @@ export const metadata = {
   openGraph: {
     title: "TwinFlames – Build Your Love Story Together",
     description:
-      "Create shared timelines, take quizzes, save precious memories, and grow closer as a couple. Perfect for celebrating your relationship digitally.",
+      "Create shared timelines, take quizzes, save precious memories, and grow closer as a couple.",
     url: "https://yourdomain.com",
     siteName: "TwinFlames",
     images: [
@@ -67,6 +66,12 @@ export const metadata = {
     index: true,
     follow: true,
   },
+};
+
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({ children }) {
