@@ -191,5 +191,15 @@ export default {
       );
       await room.storage.put("appState", room.state);
     }
+
+    if (data.type === "typing") {
+      room.broadcast(
+        JSON.stringify({
+          type: "typing",
+          username: data.username,
+        }),
+      );
+      return;
+    }
   },
 };
