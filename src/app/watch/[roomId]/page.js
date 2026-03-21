@@ -24,6 +24,7 @@ const detectSource = (url) => {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function WatchRoom() {
+  const myIdRef = useRef(crypto.randomUUID());
   const { roomId } = useParams();
   const searchParams = useSearchParams();
   const { data: session } = useSession();
@@ -173,7 +174,7 @@ export default function WatchRoom() {
     socketRef.current.send(
       JSON.stringify({ type: "update-state", state: newState }),
     );
-    setMobileTab("chat"); // auto-switch to chat after setting video
+    setMobileTab("chat");
   };
 
   if (!session) {
@@ -273,7 +274,7 @@ export default function WatchRoom() {
                 <ChatPanel
                   socketRef={socketRef}
                   isHost={isHost}
-                  myConnectionId={socketRef.current?.id}
+                  myConnectionId={myIdRef.current}
                 />
               </div>
             </div>

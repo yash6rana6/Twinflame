@@ -1,8 +1,10 @@
-import { timeStamp } from "console";
+
 
 export default {
   async onStart(room) {
+    console.log("ROOM ID:", room.id.toString());
     const stored = await room.storage.get("appState");
+    console.log("SAVED STATE:", stored);
     const chatHistory = await room.storage.get("chatHistory");
     if (stored) {
       room.state = stored;
@@ -22,6 +24,10 @@ export default {
       };
       console.log("[onStart] Fresh state created");
       await room.storage.put("appState", room.state);
+
+      const check = await room.storage.get("appState");
+      console.log("AFTER SAVE:", check);
+      console.log(room.state);
     }
     room.chatHistory = chatHistory || [];
   },
@@ -170,10 +176,12 @@ export default {
       const chatMessage = {
         type: "chat",
         text: data.text.trim(),
-        senderId: sender.id || "unknown",
+        senderId: data.senderId || sender.Id,
         timestamp: Date.now(),
         username: data.username || "Anon",
       };
+
+      console.log(chatMessage)
 
       room.broadcast(JSON.stringify(chatMessage));
       room.chatHistory = [...(room.chatHistory || []), chatMessage].slice(-50);
@@ -201,5 +209,5 @@ export default {
       );
       return;
     }
-  },
+  }
 };

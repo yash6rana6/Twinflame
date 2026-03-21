@@ -69,6 +69,7 @@ export default function ChatPanel({ socketRef, isHost, myConnectionId }) {
   const sendMessage = () => {
     if (!input.trim() || !socketRef.current) return;
 
+    
     const msg = {
       type: "chat",
       text: input.trim(),
@@ -76,12 +77,8 @@ export default function ChatPanel({ socketRef, isHost, myConnectionId }) {
       senderId: myConnectionId,
       timestamp: Date.now(),
     };
-
-    // ⚡ optimistic UI
-    setMessages((prev) => [...prev, msg]);
-
-    socketRef.current.send(JSON.stringify(msg));
-
+    console.log(msg)
+    socketRef.current.send(JSON.stringify(msg)); 
     setInput("");
   };
 
