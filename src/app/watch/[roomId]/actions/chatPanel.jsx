@@ -18,37 +18,60 @@ export default function ChatPanel({ socketRef, isHost, myConnectionId }) {
     scrollToBottom();
   }, [messages]);
 
-useEffect(() => {
-  const interval = setInterval(() => {
+  useEffect(() => {
     if (!socketRef.current) return;
 
     const ws = socketRef.current;
 
     const handleMessage = (event) => {
-      const data = JSON.parse(event.data);
+      try {
+        const data = JSON.parse(event.data);
+        console.log("Received WS message:", data); // ← yeh line rakho debug ke liye
 
-      if (data.type === "chat") {
-        setMessages((prev) => [...prev, data]);
-      }
+        if (data.type === "chat") {
+          setMessages((prev) => {
+            // Avoid duplicates if server echoes your own msg
+            if (
+              prev.some(
+                (m) => m.timestamp === data.timestamp && m.text === data.text,
+              )
+            ) {
+              return prev;
+            }
+            return [...prev, data];
+          });
+        }
 
-      if (data.type === "chat-history") {
-        setMessages(data.messages || []);
+        if (data.type === "chat-history") {
+          setMessages(data.messages || []);
+        }
+
+        // Typing handler (optional, agar server typing bhej raha hai)
+        if (data.type === "typing") {
+          setTypingUser(data.username);
+          setTimeout(() => setTypingUser(null), 4000);
+        }
+      } catch (err) {
+        console.error("WS parse error:", err, event.data);
       }
     };
 
     ws.addEventListener("message", handleMessage);
 
-    clearInterval(interval);
-  }, 100);
+    // Optional: connection open pe history maang lo
+    if (ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({ type: "get-chat-history" })); // agar backend support karta hai
+    }
 
-  return () => clearInterval(interval);
-}, []);
+    return () => {
+      ws.removeEventListener("message", handleMessage);
+    };
+  }, []);
 
   // 🚀 SEND MESSAGE (Optimistic UI)
   const sendMessage = () => {
     if (!input.trim() || !socketRef.current) return;
 
-    
     const msg = {
       type: "chat",
       text: input.trim(),
@@ -56,8 +79,8 @@ useEffect(() => {
       senderId: myConnectionId,
       timestamp: Date.now(),
     };
-    console.log(msg)
-    socketRef.current.send(JSON.stringify(msg)); 
+    console.log(msg);
+    socketRef.current.send(JSON.stringify(msg));
     setInput("");
   };
 
@@ -69,7 +92,7 @@ useEffect(() => {
       JSON.stringify({
         type: "typing",
         username: isHost ? "Host" : "Viewer",
-      })
+      }),
     );
   };
 
@@ -82,7 +105,6 @@ useEffect(() => {
 
   return (
     <div className="flex flex-col min-h-0 h-full w-full bg-[var(--panel)] overflow-hidden border border-[var(--border)] rounded-xl">
-      
       {/* Header */}
       <div className="flex-none px-4 py-3 border-b border-[var(--border)] bg-[var(--surface)]/60 flex items-center justify-between">
         <h3 className="text-[var(--gold-light)] text-xs font-medium uppercase tracking-widest font-mono">
