@@ -18,52 +18,31 @@ export default function ChatPanel({ socketRef, isHost, myConnectionId }) {
     scrollToBottom();
   }, [messages]);
 
-  // ✅ FIXED WebSocket listener (stable)
-  useEffect(() => {
+useEffect(() => {
+  const interval = setInterval(() => {
+    if (!socketRef.current) return;
+
     const ws = socketRef.current;
-    if (!ws) return;
 
     const handleMessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
+      const data = JSON.parse(event.data);
 
-        // 💬 chat message
-        if (data.type === "chat") {
-          setMessages((prev) => {
-            const exists = prev.some(
-              (m) =>
-                m.timestamp === data.timestamp &&
-                m.senderId === data.senderId
-            );
-            if (exists) return prev;
-            return [...prev, data];
-          });
-        }
+      if (data.type === "chat") {
+        setMessages((prev) => [...prev, data]);
+      }
 
-        // 📜 chat history
-        if (data.type === "chat-history") {
-          setMessages(data.messages || []);
-        }
-
-        // 💬 typing indicator
-        if (data.type === "typing") {
-          setTypingUser(data.username);
-
-          setTimeout(() => {
-            setTypingUser(null);
-          }, 1500);
-        }
-      } catch (err) {
-        console.error("Chat error:", err);
+      if (data.type === "chat-history") {
+        setMessages(data.messages || []);
       }
     };
 
     ws.addEventListener("message", handleMessage);
 
-    return () => {
-      ws.removeEventListener("message", handleMessage);
-    };
-  }, [socketRef]); // ✅ empty dependency (IMPORTANT)
+    clearInterval(interval);
+  }, 100);
+
+  return () => clearInterval(interval);
+}, []);
 
   // 🚀 SEND MESSAGE (Optimistic UI)
   const sendMessage = () => {
