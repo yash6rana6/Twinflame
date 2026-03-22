@@ -63,7 +63,7 @@ export default function ChatPanel({ socketRef, isHost, myConnectionId }) {
     return () => {
       ws.removeEventListener("message", handleMessage);
     };
-  }, []); // ✅ empty dependency (IMPORTANT)
+  }, [socketRef]); // ✅ empty dependency (IMPORTANT)
 
   // 🚀 SEND MESSAGE (Optimistic UI)
   const sendMessage = () => {
