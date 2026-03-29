@@ -27,7 +27,7 @@ export default function Footer() {
             </motion.div>
             <div>
               <h2 className="text-2xl font-serif font-bold text-[#4A2C2C]">
-                Soulmate
+                Twinflame
               </h2>
               <p className="text-[9px] uppercase tracking-[0.35em] text-[#E91E63] font-bold">
                 Digital Love Vault
@@ -65,7 +65,7 @@ export default function Footer() {
         {/* Bottom */}
         <div className="flex flex-col items-center gap-4 text-center">
           <p className="text-sm text-[#4A2C2C]/70">
-            © {currentYear} Soulmate. Crafted with 
+            © {currentYear} Twinflame. Crafted with 
             <motion.span
               animate={{ scale: [1, 1.2, 1] }}
               transition={{ repeat: Infinity, duration: 1.5 }}

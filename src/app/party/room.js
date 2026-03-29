@@ -2,16 +2,11 @@
 
 export default {
   async onStart(room) {
-    console.log("ROOM ID:", room.id.toString());
     const stored = await room.storage.get("appState");
-    console.log("SAVED STATE:", stored);
-    const chatHistory = await room.storage.get("chatHistory");
+
     if (stored) {
       room.state = stored;
-      console.log(
-        "[onStart] Loaded from storage:",
-        room.state.hostId || "no host yet",
-      );
+      console.log("[onStart] Loaded state, hostId:", room.state.hostId || "none");
     } else {
       room.state = {
         hostId: null,
@@ -22,21 +17,14 @@ export default {
         source: null,
         lastUpdate: 0,
       };
-      console.log("[onStart] Fresh state created");
       await room.storage.put("appState", room.state);
-
-      const check = await room.storage.get("appState");
-      console.log("AFTER SAVE:", check);
-      console.log(room.state);
     }
-    room.chatHistory = chatHistory || [];
   },
 
   async onConnect(conn, room) {
-    if (!room.state) {
-      await this.onStart(room);
-    }
+    if (!room.state) await this.onStart(room);
 
+    // Role URL param se lo
     let role = "guest";
     try {
       if (conn.request?.url) {
@@ -44,79 +32,107 @@ export default {
         role = url.searchParams.get("role") || "guest";
       }
     } catch (e) {
-      console.warn("⚠️ URL parse failed, defaulting to guest");
+      console.warn("URL parse failed, defaulting to guest");
     }
 
     let hostChanged = false;
 
-    // 🧹 Agar stored hostId hai but wo banda connected hi nahi hai → reset
+    // Agar stored hostId hai but wo disconnect ho chuka hai → reset
     const connectedIds = [...room.getConnections()].map((c) => c.id);
     if (room.state.hostId && !connectedIds.includes(room.state.hostId)) {
-      console.log("🧹 Stale host found, resetting host");
       room.state.hostId = null;
       hostChanged = true;
     }
 
-    // 👑 Agar koi host nahi hai aur ye banda host role ke saath aaya hai → make host
+    // Koi host nahi + ye banda host role ke saath aaya → make host
     if (!room.state.hostId && role === "host") {
       room.state.hostId = conn.id;
       hostChanged = true;
-      console.log("👑 Assigned new host:", conn.id);
       await room.storage.put("appState", room.state);
     }
 
-    // 🔔 Host change broadcast
     if (hostChanged) {
       room.broadcast(
-        JSON.stringify({
-          type: "host-changed",
-          newHostId: room.state.hostId,
-        }),
+        JSON.stringify({ type: "host-changed", newHostId: room.state.hostId })
       );
     }
 
-    // 🔥 New client ko current state bhejo
-    // 🔥 New client ko current state bhejo
+    // Current state bhejo — yourId include kiya taaki client apna role jaane
     conn.send(
       JSON.stringify({
         type: "state-update",
         state: room.state,
+        yourId: conn.id,
         yourRole: conn.id === room.state.hostId ? "host" : "viewer",
-      }),
-    );
-
-    // 💬 Send chat history
-    conn.send(
-      JSON.stringify({
-        type: "chat-history",
-        messages: room.chatHistory || [],
-      }),
+      })
     );
 
     console.log(
-      "🔌 Connected:",
-      conn.id,
-      "role:",
-      conn.id === room.state.hostId ? "host" : "viewer",
+      "Connected:", conn.id,
+      "| role:", conn.id === room.state.hostId ? "host" : "viewer",
+      "| video:", room.state.videoUrl || "none"
     );
   },
 
   async onClose(conn, room) {
     if (!room?.state) return;
+    if (conn.id !== room.state.hostId) return; // Guest disconnect — ignore
 
-    if (conn.id === room.state.hostId) {
-      console.log("⚠️ Host disconnected:", conn.id);
-      room.state.hostId = null;
+    console.log("Host disconnected:", conn.id);
 
+    // Video pause karo taaki loop na chale
+    room.state = {
+      ...room.state,
+      isPlaying: false,
+      hostId: null,
+      lastUpdate: Date.now(),
+    };
+
+    const remaining = [...room.getConnections()].filter((c) => c.id !== conn.id);
+
+    if (remaining.length > 0) {
+      // Pehle viewer ko promote karo host ke roop mein
+      const newHost = remaining[0];
+      room.state.hostId = newHost.id;
+
+      console.log("Promoting new host:", newHost.id);
+
+      // Naye host ko promote event bhejo
+      newHost.send(
+        JSON.stringify({
+          type: "promoted-to-host",
+          state: room.state,
+          yourId: newHost.id,
+          yourRole: "host",
+        })
+      );
+
+      // Sabko updated hostId + paused state batao
       room.broadcast(
         JSON.stringify({
           type: "host-changed",
-          newHostId: null,
-        }),
+          newHostId: newHost.id,
+          state: room.state,
+        })
       );
+    } else {
+      // Room empty — state reset karo
+      console.log("Room empty, resetting");
+      room.state = {
+        ...room.state,
+        videoUrl: "",
+        currentTime: 0,
+        isPlaying: false,
+        hostId: null,
+        lastUpdate: Date.now(),
+      };
 
-      await room.storage.put("appState", room.state);
+      room.broadcast(
+        JSON.stringify({ type: "host-changed", newHostId: null, state: room.state })
+      );
     }
+
+    await room.storage.put("appState", room.state);
   },
 
   async onMessage(message, sender, room) {
@@ -126,15 +142,13 @@ export default {
     try {
       data = JSON.parse(message);
     } catch (err) {
-      console.error("Bad JSON message:", err);
+      console.error("Bad JSON:", err);
       return;
     }
 
-    console.log("📩 Message from", sender.id, "type:", data.type);
-
     let stateChanged = false;
 
-    // 🎬 SET VIDEO
+    // SET VIDEO
     if (data.type === "set-video") {
       room.state = {
         ...room.state,
@@ -148,7 +162,7 @@ export default {
       stateChanged = true;
     }
 
-    // 🔄 SYNC STATE
+    // SYNC (play/pause/seek)
     if (data.type === "update-state") {
       room.state = {
         ...room.state,
@@ -158,7 +172,7 @@ export default {
       stateChanged = true;
     }
 
-    // 🧹 CLEAR VIDEO
+    // CLEAR VIDEO
     if (data.type === "clear-video") {
       room.state = {
         ...room.state,
@@ -170,44 +184,26 @@ export default {
       stateChanged = true;
     }
 
-    if (data.type == "chat") {
-      if (!data.text?.trim()) return;
-
-      const chatMessage = {
-        type: "chat",
-        text: data.text.trim(),
-        senderId: data.senderId || sender.Id,
-        timestamp: Date.now(),
-        username: data.username || "Anon",
-      };
-
-      console.log(chatMessage)
-
-      room.broadcast(JSON.stringify(chatMessage));
-      room.chatHistory = [...(room.chatHistory || []), chatMessage].slice(-50);
-      await room.storage.put("chatHistory", room.chatHistory);
-      return;
-    }
-
-    // 📢 Broadcast to everyone
-    if (stateChanged) {
-      room.broadcast(
+    // Client ready signal — player mount hone ke baad fresh state bhejo sirf usi ko
+    // Client side pe: useEffect mein socket.send({ type: "i-am-ready" }) jab player mount ho
+    if (data.type === "i-am-ready") {
+      sender.send(
         JSON.stringify({
           type: "state-update",
           state: room.state,
-        }),
-      );
-      await room.storage.put("appState", room.state);
-    }
-
-    if (data.type === "typing") {
-      room.broadcast(
-        JSON.stringify({
-          type: "typing",
-          username: data.username,
-        }),
+          yourId: sender.id,
+          yourRole: sender.id === room.state.hostId ? "host" : "viewer",
+        })
       );
       return;
     }
-  }
+
+    // Broadcast to all
+    if (stateChanged) {
+      room.broadcast(
+        JSON.stringify({ type: "state-update", state: room.state })
+      );
+      await room.storage.put("appState", room.state);
+    }
+  },
 };

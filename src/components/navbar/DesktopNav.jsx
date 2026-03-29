@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import AuthCTA from "./AuthCTA";
+import NotificationBell from "../NotificationBell";
 
 export default function DesktopNav({ scrolled, user, loading, onLogout }) {
   return (
@@ -17,14 +18,14 @@ export default function DesktopNav({ scrolled, user, loading, onLogout }) {
             Products
             <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-[#E91E63] group-hover:w-full transition-all duration-300" />
           </Link>
-{/* 
+
           <Link
             href="/timeline"
             className="relative group text-[10px] uppercase tracking-[0.15em] font-bold text-[#4A2C2C]/70 hover:text-[#E91E63] transition-colors"
           >
             Timeline
             <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-[#E91E63] group-hover:w-full transition-all duration-300" />
-          </Link> */}
+          </Link>
 
           <Link
             href="/quiz"
@@ -50,6 +51,9 @@ export default function DesktopNav({ scrolled, user, loading, onLogout }) {
             Watch
             <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-[#E91E63] group-hover:w-full transition-all duration-300" />
           </Link>
+          <div className="relative">
+            <NotificationBell />
+          </div>
 
           <motion.button
             whileHover={{ scale: 1.07 }}

@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { AuthProvider } from "@/context/AuthContext";
 import Navbar from "@/components/navbar/Navbar";
 import Footer from "@/components/Footer";
+import NotificationBell from "@/components/NotificationBell";
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
@@ -83,8 +84,8 @@ export default function RootLayout({ children }) {
       <Suspense fallback={<div>Loading auth...</div>}>
           <AuthProvider>
              <Navbar />
+            
             {children}
-             <Footer />
           </AuthProvider>
         </Suspense>
       </body>

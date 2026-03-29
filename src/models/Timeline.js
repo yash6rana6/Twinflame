@@ -1,75 +1,3 @@
-// const timelineEventSchema = new mongoose.Schema(
-//   {
-//     timeline: {
-//       type: mongoose.Schema.Types.ObjectId,
-//       ref: "Timeline",
-//       required: true,
-//       index: true,
-//     },
-
-//     date: {
-//       type: Date,
-//       required: true,
-//       index: true,
-//     },
-
-//     dateString: {
-//       type: String, // "2025-02-14"
-//       required: true,
-//       index: true,
-//     },
-
-//     title: {
-//       type: String,
-//       maxlength: 100,
-//       trim: true,
-//     },
-
-//     description: {
-//       type: String,
-//       maxlength: 2000,
-//     },
-
-//     media: [
-//       {
-//         url: { type: String, required: true },
-//         type: { type: String, enum: ["image", "video"], default: "image" },
-//         caption: { type: String, maxlength: 200 },
-//         uploadedBy: {
-//           type: mongoose.Schema.Types.ObjectId,
-//           ref: "User",
-//         },
-//         uploadedAt: { type: Date, default: Date.now },
-//       },
-//     ],
-
-//     mood: {
-//       type: String,
-//       enum: [
-//         "happy",
-//         "romantic",
-//         "funny",
-//         "adventurous",
-//         "cozy",
-//         "emotional",
-//         "surprised",
-//       ],
-//     },
-
-//     isLocked: { type: Boolean, default: false }, 
-//   },
-//   { timestamps: true }
-// );
-
-// timelineSchema.pre("save", function (next) {
-//   if (!this.expiresAt) {
-//     this.expiresAt = new Date(
-//       Date.now() + this.validityDays * 24 * 60 * 60 * 1000
-//     );
-//   }
-//   next();
-// });
-
 import mongoose from "mongoose";
 
 const timelineSchema = new mongoose.Schema(
@@ -81,13 +9,12 @@ const timelineSchema = new mongoose.Schema(
       index: true,
     },
 
-    owners: [
+    owner: 
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
         required: true,
       },
-    ],
 
     title: {
       type: String,
@@ -104,10 +31,37 @@ const timelineSchema = new mongoose.Schema(
     theme: {
       type: String,
       required: true,
+      enum: ["romantic", "minimal", "classic", "travel", "family"],
+    },
+
+    /* ---------------- Partner System ---------------- */
+    partnerId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
+
+    invitedPartner: {        
+      type: String,
+      lowercase: true,
+      trim: true,
+      default: null,
+    },
+
+    /* ---------------- Alternate Upload ---------------- */
+    nextUploader: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
+
+    lastUploadedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
     },
 
     /* ---------------- Plan & Access ---------------- */
-
     plan: {
       type: String,
       enum: ["free", "pro"],
@@ -126,8 +80,8 @@ const timelineSchema = new mongoose.Schema(
 
     status: {
       type: String,
-      enum: ["active", "expired", "paused"],
-      default: "active",
+      enum: ["pending", "active", "expired", "paused", "declined"],
+      default: "pending",
     },
 
     validityDays: {
@@ -141,7 +95,6 @@ const timelineSchema = new mongoose.Schema(
     },
 
     /* ---------------- Gamification ---------------- */
-
     points: {
       type: Number,
       default: 0,
@@ -164,11 +117,11 @@ const timelineSchema = new mongoose.Schema(
     },
 
     lastEventDate: {
-      type: String, // YYYY-MM-DD
+      type: String,
+      default: null,
     },
 
     /* ---------------- Analytics ---------------- */
-
     viewCount: {
       type: Number,
       default: 0,
@@ -179,8 +132,6 @@ const timelineSchema = new mongoose.Schema(
       default: 0,
     },
 
-    /* ---------------- Export ---------------- */
-
     lastExportedAt: {
       type: Date,
     },
@@ -188,8 +139,8 @@ const timelineSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-/* Auto expiry setup */
-timelineSchema.pre("save", function () {
+/* Auto expiry setup - Correct way */
+timelineSchema.pre("save", async function () {
   if (!this.expiresAt) {
     this.expiresAt = new Date(
       Date.now() + this.validityDays * 24 * 60 * 60 * 1000

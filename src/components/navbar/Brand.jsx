@@ -27,7 +27,7 @@ export default function Brand({ scrolled }) {
                 ${scrolled ? 'text-lg' : 'text-2xl'}
               `}
             >
-              Soulmate
+              Twinflame
             </span>
             <motion.span
               animate={{ scale: [1, 1.2, 1] }}
