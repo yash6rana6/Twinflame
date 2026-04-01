@@ -70,7 +70,7 @@ export default function Player({
         src={videoSrc}
         controls={isHost}
         autoPlay
-        muted={true}
+        muted={false}
         playsInline
         className="w-full h-full object-contain bg-black"
         onPlay={() => isHost && onVideoState?.()}
