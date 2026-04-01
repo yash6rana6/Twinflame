@@ -7,5 +7,7 @@ export const detectSource = (url) => {
   if (/\.(mp4|webm|ogg)$/i.test(cleanUrl) || /cloudinary\.com.*\/video\/upload\//i.test(url)) {
     return { type: "video", url };
   }
+
+  
   return { type: "unknown" };
 };

@@ -1,5 +1,4 @@
 
-
 export default {
   async onStart(room) {
     const stored = await room.storage.get("appState");

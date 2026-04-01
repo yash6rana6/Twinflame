@@ -1,11 +1,10 @@
 "use client";
 
 import YouTube from "react-youtube";
-import { motion } from "framer-motion";
-import { Youtube, Monitor } from "lucide-react";
+import { Youtube, Monitor, PlayCircle } from "lucide-react";   // PlayCircle use kar raha hoon (safer)
 
 export default function Player({
-  playerType,     // "youtube" ya "video"
+  playerType,     // "youtube" | "video" | "mega"
   videoSrc,
   isHost,
   playerRef,
@@ -28,8 +27,7 @@ export default function Player({
     </div>
   );
 
- // Replace react-youtube entirely with a plain iframe for host
-if (playerType === "youtube") {
+  if (playerType === "youtube") {
   return (
     <PlayerWrapper icon={Youtube} label="YouTube Sync">
       {!isHost && <div className="absolute inset-0 z-10" />}
@@ -61,20 +59,31 @@ if (playerType === "youtube") {
     </PlayerWrapper>
   );
 }
-  // Native Video Player
+
+
+  // ==================== Native Video Player (Streamable, File.kiwi, etc.) ====================
   return (
     <PlayerWrapper icon={Monitor} label="Custom Video">
       <video
-        key={videoSrc}                       // ← Yeh bhi zaroori hai
+        key={videoSrc}
         ref={playerRef}
         src={videoSrc}
         controls={isHost}
         autoPlay
+        muted={true}
+        playsInline
         className="w-full h-full object-contain bg-black"
-        onPlay={() => isHost && onVideoState()}
-        onPause={() => isHost && onVideoState()}
-        onSeeked={() => isHost && onVideoState()}
+        onPlay={() => isHost && onVideoState?.()}
+        onPause={() => isHost && onVideoState?.()}
+        onSeeked={() => isHost && onVideoState?.()}
+        onTimeUpdate={() => isHost && onVideoState?.()}
       />
+      
+      {!isHost && (
+        <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/50 pointer-events-none">
+
+        </div>
+      )}
     </PlayerWrapper>
   );
 }
