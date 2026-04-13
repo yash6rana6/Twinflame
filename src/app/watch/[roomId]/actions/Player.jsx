@@ -13,14 +13,13 @@ export default function Player({
 }) {
   if (!videoSrc) return null;
 
-  const PlayerWrapper = ({ children, icon: Icon, label }) => (
+  const PlayerWrapper = ({ children, icon: Icon }) => (
     <div className="relative w-full aspect-video bg-black rounded-[2.5rem] overflow-hidden border border-white/10 shadow-[0_20px_100px_rgba(0,0,0,0.7)] group">
       <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-black/10 z-0" />
 
       {/* Status Badge */}
       <div className="absolute top-6 left-6 z-20 flex items-center gap-2 px-4 py-1.5 bg-black/60 backdrop-blur-md rounded-full border border-white/10">
         <Icon size={14} className="text-pink-400" />
-        <span className="text-xs font-bold uppercase tracking-widest text-white/70">{label}</span>
       </div>
 
       {children}
