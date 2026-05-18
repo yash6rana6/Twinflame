@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
+import NotificationBell from "../NotificationBell";
 
 export default function MobileMenu({
   user,
@@ -55,7 +56,10 @@ export default function MobileMenu({
             >
               Watch
             </Link>
-            <div className="relative">
+            <div
+              className="block text-center text-sm uppercase tracking-[0.2em] font-bold text-[#4A2C2C]/80 hover:text-[#E91E63] transition-colors"
+              onClick={onClose}
+            >
               <NotificationBell />
             </div>
           </>
