@@ -36,7 +36,7 @@ export default function RoomControls({ roomId, isHost }) {
   const handleLeaveRoom = () => router.push("/");
   // --- END LOGIC ---
 
-  if (!roomId) return null; // Room ke bahar ye component dikhega hi nahi
+  if (!roomId) return null; 
 
   return (
     <div className="flex items-center gap-2 sm:gap-4 w-full justify-end">

@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useRef } from "react";
@@ -9,8 +8,6 @@ import { detectSource } from "@/helpers/detectSource";
 import RoomControls from "./actions/RoomControls";
 import UploadPanel from "./actions/UploadPanel";
 import ChatPanel from "./actions/chatPanel";
-
-// Components
 import Player from "./actions/Player";
 import SignInToWatch from "@/components/watch/SignInToWatch";
 import WatchRoomUI from "@/components/watch/WatchRoomUI";
@@ -31,30 +28,27 @@ export default function WatchRoom() {
     setPlayerType,
     videoSrc,
     setVideoSrc,
+    onPlayerReady,    // ← from hook
     updateRemoteState,
+    syncState,
+    setVideo,
+    clearVideo,
   } = useWatchSocket(roomId, role, playerRef);
 
   if (!session) return <SignInToWatch />;
 
+  // Host sets a new video
   const handleSetVideo = (url) => {
     if (!isHost) return;
     const detected = detectSource(url);
     if (detected.type === "unknown") return alert("Invalid URL");
-
-    const newState = { videoUrl: url, currentTime: 0, isPlaying: false };
-    setState(newState);
-    setPlayerType(detected.type);
-    setVideoSrc(detected.type === "youtube" ? detected.id : detected.url);
-    updateRemoteState(newState);
+    setVideo(url);
   };
 
-  const syncState = () => {
+  // Host player events → broadcast to guests
+  const handleSyncState = () => {
     if (!isHost || !playerRef.current) return;
-    const p = playerRef.current;
-    const currentTime = p.getCurrentTime ? p.getCurrentTime() : p.currentTime;
-    const isPlaying = p.getPlayerState ? p.getPlayerState() === 1 : !p.paused;
-
-    updateRemoteState({ ...state, currentTime, isPlaying });
+    syncState();
   };
 
   const playerEl = videoSrc ? (
@@ -63,8 +57,9 @@ export default function WatchRoom() {
       videoSrc={videoSrc}
       isHost={isHost}
       playerRef={playerRef}
-      onYouTubeState={syncState}
-      onVideoState={syncState}
+      onYouTubeState={handleSyncState}
+      onVideoState={handleSyncState}
+      onPlayerReady={onPlayerReady}   // ← wire it in
     />
   ) : null;
 

@@ -10,24 +10,19 @@ const generateId = () =>
     ? crypto.randomUUID()
     : Math.random().toString(36).substring(2, 11);
 
-// Message bubble — Telegram style: name floats ABOVE the bubble, outside it
+// ── Message Bubble ────────────────────────────────────────────────────────────
 const MessageBubble = memo(({ msg, isMe }) => (
   <div className={`flex flex-col ${isMe ? "items-end" : "items-start"} gap-0.5`}>
-
-    {/* ── Name tag — sits above bubble, outside it, like Telegram ── */}
     {msg.senderName && (
       <span
         className={`text-[10px] font-bold px-1 leading-none ${
-          isMe
-            ? "text-pink-400/50 text-right"         // muted for self
-            : "text-pink-400 text-left"              // vivid for others
+          isMe ? "text-pink-400/50 text-right" : "text-pink-400 text-left"
         }`}
       >
         {isMe ? "You" : msg.senderName}
       </span>
     )}
 
-    {/* ── Bubble ── */}
     <div
       className={`max-w-[85%] px-4 py-2.5 rounded-2xl text-sm shadow-md ${
         isMe
@@ -38,43 +33,78 @@ const MessageBubble = memo(({ msg, isMe }) => (
       {msg.text}
     </div>
 
-    {/* ── Timestamp ── */}
     <span className="text-[8px] font-bold text-white/20 px-1 uppercase tracking-tighter">
       {new Date(msg.timestamp).toLocaleTimeString([], {
         hour: "2-digit",
         minute: "2-digit",
       })}
     </span>
-
   </div>
 ));
 MessageBubble.displayName = "MessageBubble";
 
+// ── ChatPanel ─────────────────────────────────────────────────────────────────
 export default function ChatPanel({ roomId }) {
   const { data: session } = useSession();
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [connected, setConnected] = useState(false);
 
+  // KEY FIX: track keyboard offset so input stays visible on mobile
+  const [keyboardOffset, setKeyboardOffset] = useState(0);
+
   const myId = useRef(generateId());
   const ablyRef = useRef(null);
   const channelRef = useRef(null);
   const bottomRef = useRef(null);
+  const inputRef = useRef(null);
 
-  // Derive display name from session
   const myName =
     session?.user?.name ||
     session?.user?.email?.split("@")[0] ||
     "Anonymous";
 
-  const scrollToBottom = useCallback(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  // ── Keyboard detection via visualViewport ─────────────
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+
+    const onViewportChange = () => {
+      // offset = how much the keyboard has pushed the viewport up
+      const offset = window.innerHeight - vv.height - vv.offsetTop;
+      setKeyboardOffset(Math.max(0, offset));
+    };
+
+    vv.addEventListener("resize", onViewportChange);
+    vv.addEventListener("scroll", onViewportChange);
+    return () => {
+      vv.removeEventListener("resize", onViewportChange);
+      vv.removeEventListener("scroll", onViewportChange);
+    };
+  }, []);
+
+  // ── Auto scroll to bottom ──────────────────────────────────────────────────
+  const scrollToBottom = useCallback((instant = false) => {
+    bottomRef.current?.scrollIntoView({
+      behavior: instant ? "instant" : "smooth",
+      block: "nearest",
+    });
   }, []);
 
   useEffect(() => {
     scrollToBottom();
   }, [messages, scrollToBottom]);
 
+  // Scroll again when keyboard opens (viewport resize)
+  useEffect(() => {
+    if (keyboardOffset > 0) {
+      // Small delay so DOM has settled
+      const t = setTimeout(() => scrollToBottom(true), 80);
+      return () => clearTimeout(t);
+    }
+  }, [keyboardOffset, scrollToBottom]);
+
+  // ── Ably connection ────────────────────────────────────────────────────────
   useEffect(() => {
     if (!ablyRef.current) {
       ablyRef.current = new Ably.Realtime({
@@ -94,7 +124,6 @@ export default function ChatPanel({ roomId }) {
     client.connection.on("failed", onDisconnected);
     client.connection.on("disconnected", onDisconnected);
 
-    // Load history
     channel
       .history({ limit: 50 })
       .then((page) => {
@@ -102,7 +131,6 @@ export default function ChatPanel({ roomId }) {
       })
       .catch(console.error);
 
-    // Live messages
     const onMsg = (msg) => {
       if (!msg.data?.text) return;
       setMessages((prev) => [...prev, msg.data]);
@@ -118,6 +146,7 @@ export default function ChatPanel({ roomId }) {
     };
   }, [roomId]);
 
+  // ── Send ───────────────────────────────────────────────────────────────────
   const sendMessage = useCallback(async () => {
     const text = input.trim();
     if (!text || !channelRef.current) return;
@@ -126,7 +155,7 @@ export default function ChatPanel({ roomId }) {
       await channelRef.current.publish("chat", {
         text,
         senderId: myId.current,
-        senderName: myName, // ← NextAuth name injected here
+        senderName: myName,
         timestamp: Date.now(),
       });
     } catch (e) {
@@ -144,9 +173,12 @@ export default function ChatPanel({ roomId }) {
     [sendMessage]
   );
 
+  // ── Render ─────────────────────────────────────────────────────────────────
   return (
+    
     <div className="flex flex-col h-full w-full overflow-hidden">
-      {/* Header */}
+
+      {/* ── Header ── */}
       <div className="flex-shrink-0 px-5 py-3 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
         <div className="flex items-center gap-2">
           <Hash size={13} className="text-pink-500" />
@@ -155,7 +187,6 @@ export default function ChatPanel({ roomId }) {
           </span>
         </div>
         <div className="flex items-center gap-3">
-          {/* Logged-in user badge */}
           <span className="text-[9px] font-bold text-pink-400/60 uppercase tracking-wider">
             {myName}
           </span>
@@ -175,10 +206,10 @@ export default function ChatPanel({ roomId }) {
         </div>
       </div>
 
-      {/* Messages */}
+      {/* ── Messages ── */}
       <div
         className="flex-1 min-h-0 overflow-y-auto px-4 py-4 flex flex-col gap-3"
-        style={{ scrollbarWidth: "thin" }}
+        style={{ scrollbarWidth: "thin", overscrollBehavior: "contain" }}
       >
         {messages.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center gap-2 opacity-10 select-none">
@@ -199,16 +230,26 @@ export default function ChatPanel({ roomId }) {
         <div ref={bottomRef} />
       </div>
 
-      {/* Input */}
-      <div className="flex-shrink-0 p-3 border-t border-white/5 bg-black/30">
-        <div className="flex items-center gap-2 bg-white/[0.03] border border-white/8 p-1.5 rounded-2xl focus-within:border-pink-500/40 transition-colors duration-200">
+      {/* ── Input bar ── */}
+      <div
+        className="flex-shrink-0 p-3 border-t border-white/5 bg-black/30"
+        style={{
+          paddingBottom: keyboardOffset > 0
+            ? `${keyboardOffset + 12}px`  // 12px extra breathing room
+            : undefined,
+        }}
+      >
+        <div className="flex items-center gap-2 bg-white/[0.03] border border-white/[0.08] p-1.5 rounded-2xl focus-within:border-pink-500/40 transition-colors duration-200">
           <input
+            ref={inputRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={onKeyDown}
             placeholder="Say something..."
             maxLength={500}
-            className="flex-1 bg-transparent px-3 py-2 text-xs text-white outline-none placeholder:text-white/10"
+            // iOS: prevents page zoom on focus (font-size must be ≥16px equivalent)
+            style={{ fontSize: "16px" }}
+            className="flex-1 bg-transparent px-3 py-2 text-white outline-none placeholder:text-white/10"
           />
           <button
             onClick={sendMessage}
@@ -219,6 +260,7 @@ export default function ChatPanel({ roomId }) {
           </button>
         </div>
       </div>
+
     </div>
   );
 }
