@@ -77,8 +77,8 @@ export const viewport = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
-      <body
+    <html lang="en" suppressHydrationWarning >
+      <body suppressHydrationWarning
         className={`${geistSans.variable} ${geistMono.variable} antialiased light`}
       >
       <Suspense fallback={<div>Loading auth...</div>}>
@@ -88,7 +88,7 @@ export default function RootLayout({ children }) {
             {children}
           </AuthProvider>
         </Suspense>
-      </body>
+      </body> 
     </html>
   );
 }
