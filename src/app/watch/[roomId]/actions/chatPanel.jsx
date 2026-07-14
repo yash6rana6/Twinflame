@@ -50,10 +50,9 @@ export default function ChatPanel({ roomId }) {
   const [input, setInput] = useState("");
   const [connected, setConnected] = useState(false);
 
-  // KEY FIX: track keyboard offset so input stays visible on mobile
-  const [keyboardOffset, setKeyboardOffset] = useState(0);
+  // ✅ stable id, safe to read during render (no ref access in render)
+  const [myId] = useState(generateId);
 
-  const myId = useRef(generateId());
   const ablyRef = useRef(null);
   const channelRef = useRef(null);
   const bottomRef = useRef(null);
@@ -63,25 +62,6 @@ export default function ChatPanel({ roomId }) {
     session?.user?.name ||
     session?.user?.email?.split("@")[0] ||
     "Anonymous";
-
-  // ── Keyboard detection via visualViewport ─────────────
-  useEffect(() => {
-    const vv = window.visualViewport;
-    if (!vv) return;
-
-    const onViewportChange = () => {
-      // offset = how much the keyboard has pushed the viewport up
-      const offset = window.innerHeight - vv.height - vv.offsetTop;
-      setKeyboardOffset(Math.max(0, offset));
-    };
-
-    vv.addEventListener("resize", onViewportChange);
-    vv.addEventListener("scroll", onViewportChange);
-    return () => {
-      vv.removeEventListener("resize", onViewportChange);
-      vv.removeEventListener("scroll", onViewportChange);
-    };
-  }, []);
 
   // ── Auto scroll to bottom ──────────────────────────────────────────────────
   const scrollToBottom = useCallback((instant = false) => {
@@ -95,21 +75,18 @@ export default function ChatPanel({ roomId }) {
     scrollToBottom();
   }, [messages, scrollToBottom]);
 
-  // Scroll again when keyboard opens (viewport resize)
-  useEffect(() => {
-    if (keyboardOffset > 0) {
-      // Small delay so DOM has settled
-      const t = setTimeout(() => scrollToBottom(true), 80);
-      return () => clearTimeout(t);
-    }
-  }, [keyboardOffset, scrollToBottom]);
+  // Scroll to bottom when input gets focused (keyboard opens)
+  const handleFocus = useCallback(() => {
+    const t = setTimeout(() => scrollToBottom(true), 100);
+    return () => clearTimeout(t);
+  }, [scrollToBottom]);
 
   // ── Ably connection ────────────────────────────────────────────────────────
   useEffect(() => {
     if (!ablyRef.current) {
       ablyRef.current = new Ably.Realtime({
         key: process.env.NEXT_PUBLIC_ABLY_API_KEY,
-        clientId: myId.current,
+        clientId: myId,
       });
     }
 
@@ -144,7 +121,7 @@ export default function ChatPanel({ roomId }) {
       client.connection.off("failed", onDisconnected);
       client.connection.off("disconnected", onDisconnected);
     };
-  }, [roomId]);
+  }, [roomId, myId]);
 
   // ── Send ───────────────────────────────────────────────────────────────────
   const sendMessage = useCallback(async () => {
@@ -154,14 +131,14 @@ export default function ChatPanel({ roomId }) {
     try {
       await channelRef.current.publish("chat", {
         text,
-        senderId: myId.current,
+        senderId: myId,
         senderName: myName,
         timestamp: Date.now(),
       });
     } catch (e) {
       console.error("Send error", e);
     }
-  }, [input, myName]);
+  }, [input, myName, myId]);
 
   const onKeyDown = useCallback(
     (e) => {
@@ -175,9 +152,7 @@ export default function ChatPanel({ roomId }) {
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    
     <div className="flex flex-col h-full w-full overflow-hidden">
-
       {/* ── Header ── */}
       <div className="flex-shrink-0 px-5 py-3 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
         <div className="flex items-center gap-2">
@@ -223,7 +198,7 @@ export default function ChatPanel({ roomId }) {
             <MessageBubble
               key={`${m.timestamp}-${i}`}
               msg={m}
-              isMe={m.senderId === myId.current}
+              isMe={m.senderId === myId}
             />
           ))
         )}
@@ -231,23 +206,16 @@ export default function ChatPanel({ roomId }) {
       </div>
 
       {/* ── Input bar ── */}
-      <div
-        className="flex-shrink-0 p-3 border-t border-white/5 bg-black/30"
-        style={{
-          paddingBottom: keyboardOffset > 0
-            ? `${keyboardOffset + 12}px`  // 12px extra breathing room
-            : undefined,
-        }}
-      >
+      <div className="flex-shrink-0 p-3 border-t border-white/5 bg-black/30">
         <div className="flex items-center gap-2 bg-white/[0.03] border border-white/[0.08] p-1.5 rounded-2xl focus-within:border-pink-500/40 transition-colors duration-200">
           <input
             ref={inputRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={onKeyDown}
+            onFocus={handleFocus}
             placeholder="Say something..."
             maxLength={500}
-            // iOS: prevents page zoom on focus (font-size must be ≥16px equivalent)
             style={{ fontSize: "16px" }}
             className="flex-1 bg-transparent px-3 py-2 text-white outline-none placeholder:text-white/10"
           />
@@ -260,7 +228,6 @@ export default function ChatPanel({ roomId }) {
           </button>
         </div>
       </div>
-
     </div>
   );
 }
