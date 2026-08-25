@@ -17,6 +17,11 @@ const userSchema = new mongoose.Schema(
     isVerified: { type: Boolean, default: false },
     verifyToken: String,
     verifyTokenExpiry: Date,
+    telegramId: {
+      type: String,
+      unique: true,
+      sparse: true, // allows many docs with no telegramId (non-Telegram users)
+    },
   },
   {
     timestamps: true,
