@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback, memo } from "react";
 import Ably from "ably";
-import { Send, Hash, Circle, MessageSquare } from "lucide-react";
+import { Hash, Circle, MessageSquare } from "lucide-react";
 import { useSession } from "next-auth/react";
 
 const generateId = () =>
@@ -10,13 +10,13 @@ const generateId = () =>
     ? crypto.randomUUID()
     : Math.random().toString(36).substring(2, 11);
 
-// ── Message Bubble ────────────────────────────────────────────────────────────
+// ── Message Bubble (text only, no pink background box) ─────────────────────
 const MessageBubble = memo(({ msg, isMe }) => (
   <div className={`flex flex-col ${isMe ? "items-end" : "items-start"} gap-0.5`}>
     {msg.senderName && (
       <span
         className={`text-[10px] font-bold px-1 leading-none ${
-          isMe ? "text-pink-400/50 text-right" : "text-pink-400 text-left"
+          isMe ? "text-pink-400/70 text-right" : "text-pink-400 text-left"
         }`}
       >
         {isMe ? "You" : msg.senderName}
@@ -24,16 +24,15 @@ const MessageBubble = memo(({ msg, isMe }) => (
     )}
 
     <div
-      className={`max-w-[85%] px-4 py-2.5 rounded-2xl text-sm shadow-md ${
-        isMe
-          ? "bg-gradient-to-br from-pink-600 to-rose-600 text-white rounded-tr-none border border-pink-500/20"
-          : "bg-white/5 text-white/90 rounded-tl-none border border-white/10"
+      className={`max-w-[85%] text-sm ${
+        isMe ? "text-right text-white" : "text-left text-white/90"
       }`}
+      style={{ textShadow: "0 1px 3px rgba(0,0,0,0.9)" }}
     >
       {msg.text}
     </div>
 
-    <span className="text-[8px] font-bold text-white/20 px-1 uppercase tracking-tighter">
+    <span className="text-[8px] font-bold text-white/40 px-1 uppercase tracking-tighter">
       {new Date(msg.timestamp).toLocaleTimeString([], {
         hour: "2-digit",
         minute: "2-digit",
@@ -43,27 +42,23 @@ const MessageBubble = memo(({ msg, isMe }) => (
 ));
 MessageBubble.displayName = "MessageBubble";
 
-// ── ChatPanel ─────────────────────────────────────────────────────────────────
+// ── ChatPanel ────────────────────────────────────────────────────────────
 export default function ChatPanel({ roomId }) {
   const { data: session } = useSession();
   const [messages, setMessages] = useState([]);
-  const [input, setInput] = useState("");
   const [connected, setConnected] = useState(false);
 
-  // ✅ stable id, safe to read during render (no ref access in render)
   const [myId] = useState(generateId);
 
   const ablyRef = useRef(null);
   const channelRef = useRef(null);
   const bottomRef = useRef(null);
-  const inputRef = useRef(null);
 
   const myName =
     session?.user?.name ||
     session?.user?.email?.split("@")[0] ||
     "Anonymous";
 
-  // ── Auto scroll to bottom ──────────────────────────────────────────────────
   const scrollToBottom = useCallback((instant = false) => {
     bottomRef.current?.scrollIntoView({
       behavior: instant ? "instant" : "smooth",
@@ -75,13 +70,6 @@ export default function ChatPanel({ roomId }) {
     scrollToBottom();
   }, [messages, scrollToBottom]);
 
-  // Scroll to bottom when input gets focused (keyboard opens)
-  const handleFocus = useCallback(() => {
-    const t = setTimeout(() => scrollToBottom(true), 100);
-    return () => clearTimeout(t);
-  }, [scrollToBottom]);
-
-  // ── Ably connection ────────────────────────────────────────────────────────
   useEffect(() => {
     if (!ablyRef.current) {
       ablyRef.current = new Ably.Realtime({
@@ -123,49 +111,27 @@ export default function ChatPanel({ roomId }) {
     };
   }, [roomId, myId]);
 
-  // ── Send ───────────────────────────────────────────────────────────────────
-  const sendMessage = useCallback(async () => {
-    const text = input.trim();
-    if (!text || !channelRef.current) return;
-    setInput("");
-    try {
-      await channelRef.current.publish("chat", {
-        text,
-        senderId: myId,
-        senderName: myName,
-        timestamp: Date.now(),
-      });
-    } catch (e) {
-      console.error("Send error", e);
-    }
-  }, [input, myName, myId]);
-
-  const onKeyDown = useCallback(
-    (e) => {
-      if (e.key === "Enter" && !e.shiftKey) {
-        e.preventDefault();
-        sendMessage();
-      }
-    },
-    [sendMessage]
-  );
-
-  // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    <div className="flex flex-col h-full w-full overflow-hidden">
+    <div className="flex flex-col h-full w-full overflow-hidden bg-transparent">
       {/* ── Header ── */}
-      <div className="flex-shrink-0 px-5 py-3 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
+      <div className="flex-shrink-0 px-5 py-3 flex items-center justify-between bg-transparent">
         <div className="flex items-center gap-2">
           <Hash size={13} className="text-pink-500" />
-          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/50">
+          <span
+            className="text-[10px] font-black uppercase tracking-[0.2em] text-white/70"
+            style={{ textShadow: "0 1px 3px rgba(0,0,0,0.9)" }}
+          >
             Live Chat
           </span>
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-[9px] font-bold text-pink-400/60 uppercase tracking-wider">
+          <span
+            className="text-[9px] font-bold text-pink-400/80 uppercase tracking-wider"
+            style={{ textShadow: "0 1px 3px rgba(0,0,0,0.9)" }}
+          >
             {myName}
           </span>
-          <div className="flex items-center gap-1.5 px-2.5 py-1 bg-black/20 rounded-full border border-white/5">
+          <div className="flex items-center gap-1.5">
             <Circle
               size={5}
               className={`${
@@ -174,20 +140,23 @@ export default function ChatPanel({ roomId }) {
                   : "fill-rose-500 text-rose-500"
               } animate-pulse`}
             />
-            <span className="text-[9px] font-bold uppercase tracking-widest text-white/30">
+            <span
+              className="text-[9px] font-bold uppercase tracking-widest text-white/50"
+              style={{ textShadow: "0 1px 3px rgba(0,0,0,0.9)" }}
+            >
               {connected ? "Live" : "Offline"}
             </span>
           </div>
         </div>
       </div>
 
-      {/* ── Messages ── */}
+      {/* ── Messages only, no input bar below ── */}
       <div
-        className="flex-1 min-h-0 overflow-y-auto px-4 py-4 flex flex-col gap-3"
+        className="flex-1 min-h-0 overflow-y-auto px-4 py-4 flex flex-col gap-3 bg-transparent"
         style={{ scrollbarWidth: "thin", overscrollBehavior: "contain" }}
       >
         {messages.length === 0 ? (
-          <div className="flex-1 flex flex-col items-center justify-center gap-2 opacity-10 select-none">
+          <div className="flex-1 flex flex-col items-center justify-center gap-2 opacity-20 select-none">
             <MessageSquare size={36} />
             <p className="text-[10px] font-black uppercase tracking-[0.3em]">
               No messages yet
@@ -203,30 +172,6 @@ export default function ChatPanel({ roomId }) {
           ))
         )}
         <div ref={bottomRef} />
-      </div>
-
-      {/* ── Input bar ── */}
-      <div className="flex-shrink-0 p-3 border-t border-white/5 bg-black/30">
-        <div className="flex items-center gap-2 bg-white/[0.03] border border-white/[0.08] p-1.5 rounded-2xl focus-within:border-pink-500/40 transition-colors duration-200">
-          <input
-            ref={inputRef}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={onKeyDown}
-            onFocus={handleFocus}
-            placeholder="Say something..."
-            maxLength={500}
-            style={{ fontSize: "16px" }}
-            className="flex-1 bg-transparent px-3 py-2 text-white outline-none placeholder:text-white/10"
-          />
-          <button
-            onClick={sendMessage}
-            disabled={!input.trim()}
-            className="p-2.5 bg-pink-600 hover:bg-pink-500 disabled:opacity-20 disabled:cursor-not-allowed text-white rounded-xl transition-all active:scale-90 flex items-center justify-center shadow-lg shadow-pink-500/20"
-          >
-            <Send size={13} />
-          </button>
-        </div>
       </div>
     </div>
   );
