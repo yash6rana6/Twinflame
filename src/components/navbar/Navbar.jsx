@@ -5,9 +5,11 @@ import Brand from "./Brand";
 import DesktopNav from "./DesktopNav";
 import MobileMenu from "./MobileMenu";
 import { useAuth } from "@/context/AuthContext"; // ✅ FIXED
+import { useTelegram } from "@/hooks/useTelegram"; // ⬅️ path apne project ke hisaab se check kar lena
 
 export default function Navbar() {
   const { user, loading, logout } = useAuth();
+  const { isTelegram, ready } = useTelegram();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
@@ -21,6 +23,9 @@ export default function Navbar() {
     await logout();
     setMobileMenuOpen(false);
   };
+
+  // Telegram Mini App ke andar navbar bilkul render hi mat karo
+  if (!ready || isTelegram) return null;
 
   return (
     <nav
