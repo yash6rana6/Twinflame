@@ -1,45 +1,40 @@
 import { motion } from "framer-motion";
 import TelegramCard from "../TelegramCard";
 
-// Dark-theme counterpart to ProductsSection.jsx, used only inside the
-// Telegram Mini App. Kept separate from ProductsSection so the main
-// website's design and the Telegram design can change independently.
 export default function TelegramProductsSection() {
   return (
     <section
       id="vault"
-      className="relative py-32 px-6 bg-[#0d0d0f] rounded-t-[5rem] z-10"
+      className="relative py-8 px-4 bg-[#0d0d0f] min-h-screen"
     >
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-md mx-auto">
         {/* Header */}
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="text-center mb-24"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center mb-8"
         >
-          <span className="inline-block text-[10px] font-black text-[#E91E63] uppercase tracking-[0.4em] mb-6">
+          <span className="inline-block text-[9px] font-black text-[#E91E63] uppercase tracking-[0.3em] mb-2">
             The Magic Trio
           </span>
-          <h2 className="text-5xl md:text-7xl lg:text-8xl font-serif font-bold tracking-tighter mb-6 text-white">
+          <h2 className="text-2xl font-serif font-bold tracking-tight mb-2 text-white">
             Pick Your{" "}
             <span className="relative inline-block text-[#E91E63]">
               Magic
-              <span className="absolute -bottom-2 left-0 w-full h-3 bg-[#FFC1CC]/30 -z-10" />
+              <span className="absolute -bottom-1 left-0 w-full h-1.5 bg-[#FFC1CC]/30 -z-10" />
             </span>
           </h2>
-          <p className="text-lg text-white/50 italic max-w-2xl mx-auto">
+          <p className="text-xs text-white/50 italic max-w-xs mx-auto">
             Three digital experiences to make your love even more special
           </p>
         </motion.div>
 
         {/* Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-12">
+        <div className="flex flex-col gap-4">
           <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.1 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.05 }}
           >
             <TelegramCard
               title="Couple Quiz"
@@ -51,10 +46,9 @@ export default function TelegramProductsSection() {
           </motion.div>
 
           <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.2 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
           >
             <TelegramCard
               title="Love Timeline"
@@ -67,10 +61,9 @@ export default function TelegramProductsSection() {
           </motion.div>
 
           <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.3 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15 }}
           >
             <TelegramCard
               title="Watch movies together"
@@ -80,7 +73,6 @@ export default function TelegramProductsSection() {
               href="/watch"
             />
           </motion.div>
-
         </div>
       </div>
     </section>

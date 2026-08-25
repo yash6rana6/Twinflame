@@ -11,14 +11,27 @@ import FinalCTASection from "./landing/FinalCTASection";
 import { useTelegram } from "@/hooks/useTelegram";
 
 export default function Home() {
-  const { isTelegram } = useTelegram();
+  const { isTelegram, ready } = useTelegram();
 
+  // Telegram ke ready hone tak kuch render mat karo (flicker avoid)
+  if (!ready) return null;
+
+  // ── Telegram Mini App: sirf cards, baaki kuch nahi ──
+  if (isTelegram) {
+    return (
+      <main className="relative bg-[#FFF5F7] text-[#4A2C2C] overflow-x-hidden min-h-screen">
+        <TelegramProductsSection />
+      </main>
+    );
+  }
+
+  // ── Normal website: full landing page ──
   return (
     <main className="relative bg-[#FFF5F7] text-[#4A2C2C] overflow-x-hidden">
       <FloatingOrbs />
 
       <HeroSection />
-      {isTelegram ? <TelegramProductsSection /> : <ProductsSection />}
+      <ProductsSection />
       <HowItWorksSection />
       <StatsSection />
       <TestimonialsSection />
