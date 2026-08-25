@@ -1,23 +1,49 @@
-
-
-
 "use client";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Copy, LogOut, Shield, Users, Check, Share2 } from "lucide-react";
+import { useTelegram } from "@/hooks/useTelegram";
+
+const BOT_USERNAME = "MytwinflameBot";
+const MINI_APP_SHORT_NAME = "watch";
 
 export default function RoomControls({ roomId, isHost }) {
   const router = useRouter();
   const [copied, setCopied] = useState(false);
+  const { tg, isTelegram } = useTelegram();
 
-  // --- LOGIC (UNTOUCHED) ---
+  // --- LOGIC ---
   const handleCopyInvite = async () => {
+    // Telegram ke andar: deep link jo seedha Mini App khole (website nahi)
+    if (isTelegram) {
+      const deepLink = `https://t.me/${BOT_USERNAME}/${MINI_APP_SHORT_NAME}?startapp=${roomId}`;
+
+      if (tg?.openTelegramLink) {
+        // Telegram ka native "share to chat" sheet kholta hai
+        const shareText = encodeURIComponent(
+          "Bhai, saath mein movie dekhte hain! Join kar:"
+        );
+        tg.openTelegramLink(
+          `https://t.me/share/url?url=${encodeURIComponent(deepLink)}&text=${shareText}`
+        );
+        return;
+      }
+
+      // Fallback: clipboard
+      try {
+        await navigator.clipboard.writeText(deepLink);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } catch {}
+      return;
+    }
+
+    // ── Normal website (browser) — purana behavior unchanged ──
     const link = `${window.location.origin}/watch/${roomId}?role=guest`;
     try {
       if (navigator.share) {
-        // Mobile Native Share if available
         await navigator.share({
-          title: 'Join my TwinFlame Theater',
+          title: "Join my TwinFlame Theater",
           text: `Bhai, saath mein movie dekhte hain! Join kar:`,
           url: link,
         });
@@ -36,7 +62,7 @@ export default function RoomControls({ roomId, isHost }) {
   const handleLeaveRoom = () => router.push("/");
   // --- END LOGIC ---
 
-  if (!roomId) return null; 
+  if (!roomId) return null;
 
   return (
     <div className="flex items-center gap-2 sm:gap-4 w-full justify-end">
