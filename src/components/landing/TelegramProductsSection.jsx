@@ -29,6 +29,20 @@ export default function TelegramProductsSection() {
           </p>
         </motion.div>
 
+        <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15 }}
+          >
+            <TelegramCard
+              title="Watch movies together"
+              description="Share the screen and watch movies together, no matter the distance."
+              icon="🎬"
+              badge="Most Popular"
+              href="/watch"
+            />
+          </motion.div>
+
         {/* Cards */}
         <div className="flex flex-col gap-4">
           <motion.div
@@ -57,20 +71,6 @@ export default function TelegramProductsSection() {
               badge="lovers' favorite"
               featured={true}
               href="/timeline"
-            />
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.15 }}
-          >
-            <TelegramCard
-              title="Watch movies together"
-              description="Share the screen and watch movies together, no matter the distance."
-              icon="🎬"
-              badge="Most Popular"
-              href="/watch"
             />
           </motion.div>
         </div>
