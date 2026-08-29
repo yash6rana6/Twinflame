@@ -12,16 +12,23 @@ export function useTelegram() {
     let tries = 0;
     const check = setInterval(() => {
       tries++;
-      if (window.Telegram?.WebApp) {
-        const webApp = window.Telegram.WebApp;
+      const webApp = window.Telegram?.WebApp;
+
+      // IMPORTANT: telegram-web-app.js defines window.Telegram.WebApp on
+      // EVERY page load, even in a normal browser tab that isn't inside
+      // Telegram at all — it's just an empty/default object there. The
+      // reliable signal for "we're actually running inside Telegram" is
+      // a non-empty initData string, which Telegram only ever populates
+      // when it launches the Mini App itself.
+      if (webApp?.initData) {
         webApp.ready();
         webApp.expand();
         setTg(webApp);
         setReady(true);
         clearInterval(check);
       } else if (tries > 20) {
-        // Not inside Telegram — normal browser tab. That's fine, just
-        // means Telegram-specific features stay off.
+        // Either not inside Telegram, or the SDK object exists but has
+        // no real initData (plain browser tab) — treat as normal web.
         setReady(true);
         clearInterval(check);
       }
